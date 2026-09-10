@@ -1,0 +1,10 @@
+pypdf
+pdfplumber
+python-docx
+langchain
+langchain-community
+faiss-cpu
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
