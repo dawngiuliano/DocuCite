@@ -144,6 +144,8 @@ python tests/show_chunks.py ../data/samples/excel/招聘教师岗位汇总表.xl
 
 设置 `--limit 0` 可以显示该文件的全部切片。
 
+向量索引代码位于 `backend/docucite/index/`。它会把向量保存到 `data/indexes/index.faiss`，把切片信息保存到 `data/indexes/metadata.json`。Embedding 配置使用 `.env` 中独立的 `EMBEDDING_API_KEY`、`EMBEDDING_BASE_URL` 和 `EMBEDDING_MODEL`。
+
 - **FAISS 本地即可**：适合个人项目；索引用 `faiss.write_index` 落盘，原文与 `doc_id / 文件名 / 页码` 另存 metadata。
 - **表格不跟正文混切**：一行（或一个逻辑单元）一块，并附带表头，否则检索和引用都会糊。
 - **引用是功能，不是装饰**：回答必须能指回证据块；无命中则拒绝作答。

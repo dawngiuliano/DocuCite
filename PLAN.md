@@ -86,11 +86,13 @@
 - 多个短文本会合并，超过上限的文本按字符切分；一个表格数据行生成一个切片，并重复表头。
 - 入口会检查所有 `ParsedBlock.doc_id` 是否属于当前 `Document`。
 
-## 4. 索引（`backend/docucite/index`）
+## 4. 索引（`backend/docucite/index`，基础实现已完成）
 
-- Embedding 写入 FAISS，`faiss.write_index` 落到仓库根目录的 `data/indexes/`
-- metadata（`doc_id` / 文件名 / 页码 / 原文）另存
-- 提供：写入、加载、按向量检索 Top-K
+- `config.py` 读取独立的 Embedding 中转站配置。
+- `embeddings.py` 调用 OpenAI 兼容接口生成向量。
+- `faiss_store.py` 提供创建、保存、加载和 Top-K 检索。
+- `metadata.py` 将 `Chunk` 保存为 `metadata.json`，与 FAISS 向量顺序对应。
+- 后续需要接入 API 上传流程，并增加真实中转站调用测试。
 
 ## 5. 问答链（`backend/docucite/chain`）
 

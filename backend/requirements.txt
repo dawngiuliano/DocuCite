@@ -10,3 +10,4 @@ pydantic>=2,<3
 uvicorn[standard]
 python-multipart
 python-dotenv
+openai
