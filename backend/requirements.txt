@@ -1,10 +1,12 @@
 pypdf
 pdfplumber
 python-docx
+openpyxl
 langchain
 langchain-community
 faiss-cpu
 fastapi
+pydantic>=2,<3
 uvicorn[standard]
 python-multipart
 python-dotenv

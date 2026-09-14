@@ -8,6 +8,7 @@
 
 - conda 环境约定：`docu-cite` / Python 3.12
 - 后端空包：`backend/docucite/{ingest,chunking,index,chain,api}`
+- 数据模型：`backend/docucite/schemas.py`，包含文档、原文块、检索切片及位置、表格校验
 - 前端脚手架：Vue 3 + Vite，`element-plus` 已进 `package.json`
 - `backend/requirements.txt`、`backend/.env.example`、根目录 `.gitignore`
 
@@ -36,28 +37,32 @@
 
 这一步不写业务代码。
 
-## 1. 数据约定（后端第一行代码）
+## 1. 数据约定（已实现）
 
 在写解析器之前，先定 **一块切片长什么样**。后面 ingest / chunking / index / chain / API / 前端都吃同一份结构。
 
-每块至少包含：
+模型位于 `backend/docucite/schemas.py`，使用 Pydantic 2 校验并支持 JSON 序列化：
 
 | 字段 | 含义 |
 |------|------|
-| `doc_id` | 文档 id |
-| `filename` | 原始文件名（引用要展示） |
-| `page` | 页码；Markdown 可为空或按标题层级 |
-| `kind` | `text` 或 `table` |
-| `text` | 用于 embedding 和展示的正文 |
-| `header` | 表格块的表头；文本块可空 |
+| `Document` | `doc_id`、`filename`、`file_type`（pdf / docx / md） |
+| `ParsedBlock` | `block_id`、`doc_id`、`kind`、`text`、`table`、`location` |
+| `Chunk` | `chunk_id`、`doc_id`、`filename`、`kind`、`text`、`table`、`location`、`source_block_ids` |
+| `Location` | 页码范围、标题路径、段落序号、表格序号和数据行范围 |
+| `TableData` | `header` 和矩形 `rows`；无表头用 None，空单元格用空字符串 |
 
 约定：
 
 - 表格一行（或一个逻辑单元）一块，`text` 里带上表头，避免检索糊掉。
+- 所有位置编号从 1 开始，表格行号不含表头；未知页码保留 None，不能用段落序号充当页码。
+- 位置至少提供页码、标题路径、段落序号或表格序号之一。跨页切片使用 `page` / `page_end`。
+- 文档、原文块和切片 ID 默认生成 UUID；同一对象保存与加载时复用 ID，不重复生成。
+- 切片保存非空且不重复的 `source_block_ids`；切块器需保证这些块存在、属于同一文档，并保持原文顺序。模型本身不查询外部存储。
+- 表格块与表格切片必须保留结构化 `table`；文本块不能携带表格。切块器负责将表头（若有）和选中的数据行生成非空 `text`。
 - 无检索命中时问答链必须拒绝作答，不编造。
 - 索引用 FAISS 落盘；原文与 metadata 另存（不要只把向量丢进 index）。
 
-建议落点：`backend/docucite` 里一个小的 schema / dataclass，API 响应也沿用，避免前后端各写一套。
+验证：在 `backend/` 执行 `python -m unittest discover -s tests -v`，无需模型 Key 或联网。
 
 ## 2. 解析（`backend/docucite/ingest`）
 
@@ -129,4 +134,4 @@ uvicorn docucite.api.app:app --reload --host 127.0.0.1 --port 8000
 
 **环境 → 切片 schema → ingest → chunking → FAISS → 带引用的 chain → FastAPI → Vue 对接。**
 
-下一步动手：第 0 步配环境（若还没配），然后第 1 步写出切片数据结构。
+下一步动手：第 2 步实现解析器，输出 `ParsedBlock`；本机环境若未配置，先完成第 0 步。

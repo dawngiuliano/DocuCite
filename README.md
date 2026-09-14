@@ -86,6 +86,7 @@ DocuCite/
   backend/         # 后端工程，安装依赖与启动的工作目录
     docucite/      # Python 包，导入名为 docucite
       __init__.py
+      schemas.py   # 文档、原文块、检索切片及位置和表格结构
       ingest/      # pdf / docx / md 解析
       chunking/    # 文本切块 + 表格切块
       index/       # embedding + FAISS 读写
@@ -93,6 +94,7 @@ DocuCite/
       api/         # FastAPI，给前端调用
     requirements.txt
     .env.example
+    tests/         # 数据约定的校验测试
   data/            # 原文、上传文件与索引
   frontend/        # Vue 3 + Vite + Element Plus
   .gitignore
@@ -103,6 +105,8 @@ DocuCite/
 后端路径约定：环境配置放在 `backend/.env`，数据仍放在仓库根目录的 `data/`。后续实现配置加载时，应根据配置模块的 `__file__` 定位这些目录，避免依赖当前工作目录；从 `backend/` 手工访问数据时，相对路径为 `../data/`。
 
 ## 设计取舍
+
+数据约定已实现，详细字段和约束见 [PLAN.md](PLAN.md#1-数据约定已实现)。安装后端依赖后，在 `backend/` 执行 `python -m unittest discover -s tests -v` 验证，无需调用模型接口。
 
 - **FAISS 本地即可**：适合个人项目；索引用 `faiss.write_index` 落盘，原文与 `doc_id / 文件名 / 页码` 另存 metadata。
 - **表格不跟正文混切**：一行（或一个逻辑单元）一块，并附带表头，否则检索和引用都会糊。
