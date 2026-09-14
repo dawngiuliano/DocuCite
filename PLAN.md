@@ -71,14 +71,20 @@
 - PDF：正文 `pypdf`，表格 `pdfplumber`（保留页码）
 - Word：`python-docx`（段落 + 表格；无页码时用段落序号或节）
 - Markdown：按标题/段落；表格按 GitHub 风格表解析
+- Excel：`openpyxl`（每个工作表作为一个表格，第一行作为表头）
 
 先用仓库根目录 `data/` 里一两份样例文件手工跑通，确认能抽出表和页码。从 `backend/` 手工访问时使用 `../data/`；后续配置模块应根据自身 `__file__` 定位 `backend/.env` 和仓库根目录 `data/`，避免依赖当前工作目录。
 
-## 3. 切块（`backend/docucite/chunking`）
+## 3. 切块（`backend/docucite/chunking`，已实现）
+
+切块代码位于 `text.py`、`table.py` 和 `splitter.py`，统一入口是 `chunk_blocks(document, blocks)`。
 
 - 文本：按标题/段落切，不要把表当普通段落切开
 - 表格：表头 + 行 → 一块
 - 输出必须符合第 1 步的字段
+- 文本默认最多 1000 个字符，相邻切片默认重叠 100 个字符；可通过 `max_chars` 和 `overlap` 调整。
+- 多个短文本会合并，超过上限的文本按字符切分；一个表格数据行生成一个切片，并重复表头。
+- 入口会检查所有 `ParsedBlock.doc_id` 是否属于当前 `Document`。
 
 ## 4. 索引（`backend/docucite/index`）
 
