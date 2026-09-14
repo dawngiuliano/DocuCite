@@ -120,6 +120,30 @@ for chunk in chunks:
 
 数据约定已实现，详细字段和约束见 [PLAN.md](PLAN.md#1-数据约定已实现)。安装后端依赖后，在 `backend/` 执行 `python -m unittest discover -s tests -v` 验证，无需调用模型接口。
 
+也可以直接使用真实样例文件测试解析和切块：
+
+```powershell
+cd backend
+python tests/test_samples.py -v
+```
+
+测试会自动读取仓库根目录的 `data/samples/`。如果没有安装 `pdfplumber`，只有 PDF 测试会跳过，其他格式仍会继续测试。
+
+测试本身只做校验，不会保存切片。要在终端查看切片内容，可以执行：
+
+```powershell
+cd backend
+python tests/show_chunks.py
+```
+
+只查看某个文件，并限制显示数量：
+
+```powershell
+python tests/show_chunks.py ../data/samples/excel/招聘教师岗位汇总表.xlsx --limit 5
+```
+
+设置 `--limit 0` 可以显示该文件的全部切片。
+
 - **FAISS 本地即可**：适合个人项目；索引用 `faiss.write_index` 落盘，原文与 `doc_id / 文件名 / 页码` 另存 metadata。
 - **表格不跟正文混切**：一行（或一个逻辑单元）一块，并附带表头，否则检索和引用都会糊。
 - **引用是功能，不是装饰**：回答必须能指回证据块；无命中则拒绝作答。
