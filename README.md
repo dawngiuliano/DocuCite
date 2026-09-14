@@ -52,6 +52,8 @@ pip install -r requirements.txt
 
 复制 `backend/.env.example` 为 `backend/.env`，填入模型 API Key（已进入 `backend/` 时执行 `Copy-Item .env.example .env`）。
 
+聊天模型使用 `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`；向量模型使用独立的 `EMBEDDING_API_KEY`、`EMBEDDING_BASE_URL`、`EMBEDDING_MODEL`，可连接不同的中转站。后续调用代码需分别读取并显式传入各自的 Key、URL 和模型名称。
+
 后端 FastAPI 还没写，conda 环境配好即可；API 启动命令等实现后再补。
 
 ## 前端
