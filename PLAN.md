@@ -7,9 +7,9 @@
 已完成：
 
 - conda 环境约定：`docu-cite` / Python 3.12
-- 后端空包：`docucite/{ingest,chunking,index,chain,api}`
+- 后端空包：`backend/docucite/{ingest,chunking,index,chain,api}`
 - 前端脚手架：Vue 3 + Vite，`element-plus` 已进 `package.json`
-- `requirements.txt`、`.env.example`、`.gitignore`
+- `backend/requirements.txt`、`backend/.env.example`、根目录 `.gitignore`
 
 未完成：
 
@@ -21,16 +21,17 @@
 
 没有环境和 Key，后面都跑不起来。
 
-1. 确认 conda 环境存在并激活：
+1. 从仓库根目录执行，确认 conda 环境存在并激活：
 
    ```powershell
    conda create -n docu-cite python=3.12 -y
    conda activate docu-cite
    python -m pip install -U pip
+   cd backend
    pip install -r requirements.txt
    ```
 
-2. 复制 `.env.example` 为 `.env`，填入模型与 Embedding 的 API Key。
+2. 在 `backend/` 下执行 `Copy-Item .env.example .env`，填入模型与 Embedding 的 API Key。
 3. 确认 Node.js 20+（前端稍后用）。`frontend/` 里依赖若已装过可跳过 `npm install`。
 
 这一步不写业务代码。
@@ -56,9 +57,9 @@
 - 无检索命中时问答链必须拒绝作答，不编造。
 - 索引用 FAISS 落盘；原文与 metadata 另存（不要只把向量丢进 index）。
 
-建议落点：`docucite` 里一个小的 schema / dataclass，API 响应也沿用，避免前后端各写一套。
+建议落点：`backend/docucite` 里一个小的 schema / dataclass，API 响应也沿用，避免前后端各写一套。
 
-## 2. 解析（`docucite/ingest`）
+## 2. 解析（`backend/docucite/ingest`）
 
 按格式拆开，输出「文本 + 表格 + 页码」，不要在这里切块。
 
@@ -66,21 +67,21 @@
 - Word：`python-docx`（段落 + 表格；无页码时用段落序号或节）
 - Markdown：按标题/段落；表格按 GitHub 风格表解析
 
-先用 `data/` 里一两份样例文件手工跑通，确认能抽出表和页码。
+先用仓库根目录 `data/` 里一两份样例文件手工跑通，确认能抽出表和页码。从 `backend/` 手工访问时使用 `../data/`；后续配置模块应根据自身 `__file__` 定位 `backend/.env` 和仓库根目录 `data/`，避免依赖当前工作目录。
 
-## 3. 切块（`docucite/chunking`）
+## 3. 切块（`backend/docucite/chunking`）
 
 - 文本：按标题/段落切，不要把表当普通段落切开
 - 表格：表头 + 行 → 一块
 - 输出必须符合第 1 步的字段
 
-## 4. 索引（`docucite/index`）
+## 4. 索引（`backend/docucite/index`）
 
-- Embedding 写入 FAISS，`faiss.write_index` 落到 `data/indexes/`
+- Embedding 写入 FAISS，`faiss.write_index` 落到仓库根目录的 `data/indexes/`
 - metadata（`doc_id` / 文件名 / 页码 / 原文）另存
 - 提供：写入、加载、按向量检索 Top-K
 
-## 5. 问答链（`docucite/chain`）
+## 5. 问答链（`backend/docucite/chain`）
 
 - 问句 → 检索 Top-K → LangChain LCEL 作答
 - 答案必须能指回证据块（文件名 + 页码 + 原文片段）
@@ -88,7 +89,7 @@
 
 可用脚本在命令行先问几句，确认引用对，再写 HTTP。
 
-## 6. FastAPI（`docucite/api`）
+## 6. FastAPI（`backend/docucite/api`）
 
 给 Vue 的最小接口即可，例如：
 
@@ -96,10 +97,11 @@
 - `GET /api/documents`：已入索引的文件列表
 - `POST /api/ask`：问题 → `{ answer, citations: [{ filename, page, snippet }] }`
 
-启动（实现后写入 README）：
+启动（API 实现后可用；从仓库根目录执行，届时写入 README）：
 
 ```powershell
 conda activate docu-cite
+cd backend
 uvicorn docucite.api.app:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -114,7 +116,7 @@ uvicorn docucite.api.app:app --reload --host 127.0.0.1 --port 8000
 3. 去掉 HelloWorld，做成一页：上传 | 提问 | 答案 + 引用列表
 4. 封装 `src/api` 调 `/api/documents`、`/api/ask`
 
-开发：仓库根目录起 FastAPI，`frontend/` 里 `npm run dev`。
+开发：在 `backend/` 里启动 FastAPI，另开终端在 `frontend/` 里执行 `npm run dev`。
 
 ## 不要提前做
 

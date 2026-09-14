@@ -40,16 +40,17 @@
 
 ## 环境
 
-需要本机已安装 [Miniconda](https://docs.conda.io/en/latest/miniconda.html) 或 Anaconda。
+需要本机已安装 [Miniconda](https://docs.conda.io/en/latest/miniconda.html) 或 Anaconda。以下命令从仓库根目录执行：
 
 ```powershell
 conda create -n docu-cite python=3.12 -y
 conda activate docu-cite
 python -m pip install -U pip
+cd backend
 pip install -r requirements.txt
 ```
 
-复制 `.env.example` 为 `.env`，填入模型 API Key。
+复制 `backend/.env.example` 为 `backend/.env`，填入模型 API Key（已进入 `backend/` 时执行 `Copy-Item .env.example .env`）。
 
 后端 FastAPI 还没写，conda 环境配好即可；API 启动命令等实现后再补。
 
@@ -66,7 +67,7 @@ pip install -r requirements.txt
 | 开发代理 | Vite `server.proxy` 把 `/api` 转到 `http://127.0.0.1:8000` |
 | 页面 | 上传文档、提问、展示答案与引用（文件名 / 页码 / 原文片段） |
 
-需要本机已安装 Node.js（建议 20+）：
+需要本机已安装 Node.js（建议 20+）。另开终端，从仓库根目录执行：
 
 ```powershell
 cd frontend
@@ -80,17 +81,24 @@ npm run dev
 
 ```text
 DocuCite/
-  docucite/
-    ingest/        # pdf / docx / md 解析
-    chunking/      # 文本切块 + 表格切块
-    index/         # embedding + FAISS 读写
-    chain/         # 检索 + 问答
-    api/           # FastAPI，给前端调用
+  backend/         # 后端工程，安装依赖与启动的工作目录
+    docucite/      # Python 包，导入名为 docucite
+      __init__.py
+      ingest/      # pdf / docx / md 解析
+      chunking/    # 文本切块 + 表格切块
+      index/       # embedding + FAISS 读写
+      chain/       # 检索 + 问答
+      api/         # FastAPI，给前端调用
+    requirements.txt
+    .env.example
   data/            # 原文、上传文件与索引
   frontend/        # Vue 3 + Vite + Element Plus
-  requirements.txt
-  .env.example
+  .gitignore
+  README.md
+  PLAN.md
 ```
+
+后端路径约定：环境配置放在 `backend/.env`，数据仍放在仓库根目录的 `data/`。后续实现配置加载时，应根据配置模块的 `__file__` 定位这些目录，避免依赖当前工作目录；从 `backend/` 手工访问数据时，相对路径为 `../data/`。
 
 ## 设计取舍
 
