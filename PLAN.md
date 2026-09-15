@@ -1,20 +1,24 @@
 # DocuCite 计划
 
-先把 conda 环境和切片/引用的数据约定定住，再写解析与检索，最后才接 FastAPI 和 Vue。前端脚手架已经有了，但现在还调不到后端。
+先把 conda 环境、切片/引用的数据约定、解析、切块和向量索引定住，再接问答链、FastAPI 和 Vue。前端脚手架已经有了，但现在还调不到后端。
 
 ## 现状
 
 已完成：
 
 - conda 环境约定：`docu-cite` / Python 3.12
-- 后端空包：`backend/docucite/{ingest,chunking,index,chain,api}`
+- 后端目录：`backend/docucite/{ingest,chunking,index,chain,api}`
 - 数据模型：`backend/docucite/schemas.py`，包含文档、原文块、检索切片及位置、表格校验
+- 解析器：支持 PDF、Word、Markdown、Excel，输出 `ParsedBlock`
+- 切块器：文本按长度切分，表格按数据行切分，输出 `Chunk`
+- 向量索引基础层：Embedding 客户端、FAISS 持久化和 metadata 持久化
 - 前端脚手架：Vue 3 + Vite，`element-plus` 已进 `package.json`
 - `backend/requirements.txt`、`backend/.env.example`、根目录 `.gitignore`
 
 未完成：
 
-- 解析、切块、FAISS、问答链全是空的
+- 索引构建和查询命令行入口还没写，当前模块尚未通过真实 API 串成完整脚本
+- 问答链还没写，聊天模型尚未接入
 - FastAPI 还没写
 - 前端还是 Vite 默认页；Element Plus 未注册，`/api` 代理未配
 
@@ -45,7 +49,7 @@
 
 | 字段 | 含义 |
 |------|------|
-| `Document` | `doc_id`、`filename`、`file_type`（pdf / docx / md） |
+| `Document` | `doc_id`、`filename`、`file_type`（pdf / docx / md / xlsx） |
 | `ParsedBlock` | `block_id`、`doc_id`、`kind`、`text`、`table`、`location` |
 | `Chunk` | `chunk_id`、`doc_id`、`filename`、`kind`、`text`、`table`、`location`、`source_block_ids` |
 | `Location` | 页码范围、标题路径、段落序号、表格序号和数据行范围 |
@@ -142,4 +146,4 @@ uvicorn docucite.api.app:app --reload --host 127.0.0.1 --port 8000
 
 **环境 → 切片 schema → ingest → chunking → FAISS → 带引用的 chain → FastAPI → Vue 对接。**
 
-下一步动手：第 2 步实现解析器，输出 `ParsedBlock`；本机环境若未配置，先完成第 0 步。
+下一步动手：实现索引构建脚本和查询入口，把现有解析、切块、Embedding、FAISS 模块串起来；本机环境若未配置，先完成第 0 步。

@@ -81,6 +81,8 @@ npm run dev
 
 ## 目录结构
 
+当前进度、数据流和后续实现顺序见 [docs/current-progress.md](docs/current-progress.md)。
+
 ```text
 DocuCite/
   backend/         # 后端工程，安装依赖与启动的工作目录
@@ -145,6 +147,19 @@ python tests/show_chunks.py ../data/samples/excel/招聘教师岗位汇总表.xl
 设置 `--limit 0` 可以显示该文件的全部切片。
 
 向量索引代码位于 `backend/docucite/index/`。它会把向量保存到 `data/indexes/index.faiss`，把切片信息保存到 `data/indexes/metadata.json`。Embedding 配置使用 `.env` 中独立的 `EMBEDDING_API_KEY`、`EMBEDDING_BASE_URL` 和 `EMBEDDING_MODEL`。
+
+构建索引可以在 `backend/` 目录执行：
+
+```powershell
+python scripts/build_index.py
+```
+
+默认扫描 `../data/samples`，并将索引写入 `../data/indexes`。也可以指定单个文件或目录：
+
+```powershell
+python scripts/build_index.py ../data/samples/markdown/公告.md
+python scripts/build_index.py ../data/samples --output ../data/indexes
+```
 
 - **FAISS 本地即可**：适合个人项目；索引用 `faiss.write_index` 落盘，原文与 `doc_id / 文件名 / 页码` 另存 metadata。
 - **表格不跟正文混切**：一行（或一个逻辑单元）一块，并附带表头，否则检索和引用都会糊。
