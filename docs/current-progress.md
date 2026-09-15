@@ -15,11 +15,11 @@
   -> FAISS + metadata 持久化
 ```
 
-目前还不能通过 HTTP 上传文件、提问并返回答案。原因是问答链、FastAPI 接口和前端业务页面尚未实现。
+现在已经可以通过命令行或 FastAPI 上传文件、建立索引、提问并返回带引用的答案；前端业务页面尚未实现。
 
 ## 二、完整目标流程
 
-下面的流程图同时标出了已经完成和待实现的部分：
+下面的流程图同时标出了已经完成、已实现但需要真实验证，以及仍待实现的部分：
 
 ```mermaid
 flowchart LR
@@ -50,21 +50,22 @@ flowchart LR
     IDX --> S
     MD --> S
     S --> R[检索到的 Chunk 和相似度]
-    R --> QA[问答链<br/>当前未实现]
-    QA --> L[聊天模型中转站<br/>当前未接入]
+    R --> QA[问答链<br/>基础实现]
+    QA --> L[聊天模型客户端<br/>已接入配置]
     L --> ANS[答案 + citations]
-    ANS --> API[FastAPI API\n当前未实现]
+    ANS --> API[FastAPI API<br/>基础接口已实现]
     API --> UI[Vue 前端<br/>当前仍是脚手架]
 
     classDef done fill:#d9f7be,stroke:#389e0d,color:#135200;
     classDef partial fill:#fff1b8,stroke:#d48806,color:#613400;
     classDef todo fill:#ffd6e7,stroke:#c41d7f,color:#780650;
     class P,W,M,E,C,T,TB,CH,V,F,MD,IDX done;
-    class Q,QE,S,R partial;
-    class QA,L,ANS,API,UI todo;
+    class Q,QE,S,R,QA,L,ANS partial;
+    class API partial;
+    class UI todo;
 ```
 
-图中绿色部分已经有代码；黄色部分需要在索引和问答层之间补上查询入口；粉色部分是后续主任务。
+图中绿色部分已经有代码；黄色部分是已实现但还需要真实端到端验证的查询、问答链和 FastAPI；粉色部分是后续主任务。
 
 ## 三、已实现模块
 
@@ -186,8 +187,8 @@ DocuCite/
 │   │   │   ├── embeddings.py
 │   │   │   ├── faiss_store.py
 │   │   │   └── metadata.py
-│   │   ├── chain/      # 目录已建立，业务代码未实现
-│   │   └── api/        # 目录已建立，FastAPI 未实现
+│   │   ├── chain/      # 检索增强问答链
+│   │   └── api/        # FastAPI 上传、文档列表和问答接口
 │   ├── tests/
 │   │   ├── test_schemas.py
 │   │   ├── test_samples.py
@@ -214,7 +215,7 @@ DocuCite/
 python -m unittest discover -s tests -v
 ```
 
-当前已有模型、解析、切块和 metadata 测试，共 20 项；在缺少 `pdfplumber` 时，PDF 样例测试会被明确跳过，其他测试继续执行。
+当前测试覆盖数据模型、解析、切块、索引、问答链和 FastAPI，共 38 项；如果环境缺少 `faiss-cpu` 或 `pdfplumber`，对应测试会被明确跳过，其他测试继续执行。
 
 使用真实样例进行解析和切块测试：
 
@@ -270,9 +271,16 @@ cd backend
 python scripts/search_index.py "教师岗位招聘人数是多少？" --top-k 5
 ```
 
-### 2. 问答链：`backend/docucite/chain/`（待实现）
+### 2. 问答链：`backend/docucite/chain/`（基础实现已完成）
 
-需要使用聊天模型中转站配置：
+问答链由 `client.py`、`prompt.py` 和 `qa.py` 组成，并通过 `backend/scripts/ask.py` 提供命令行入口：
+
+```powershell
+cd backend
+python scripts/ask.py "教师岗位招聘人数是多少？"
+```
+
+聊天模型使用独立的中转站配置：
 
 ```dotenv
 OPENAI_API_KEY=...
@@ -280,7 +288,7 @@ OPENAI_BASE_URL=...
 OPENAI_MODEL=...
 ```
 
-问答链要把检索到的切片组织成上下文，要求模型只根据上下文回答；没有足够依据时返回“不知道”，并生成：
+问答链会把检索到的切片组织成上下文，要求模型只根据上下文回答；没有足够依据时返回“不知道”，并生成：
 
 ```json
 {
@@ -295,9 +303,9 @@ OPENAI_MODEL=...
 }
 ```
 
-### 3. FastAPI：`backend/docucite/api/`
+### 3. FastAPI：`backend/docucite/api/`（基础接口已实现）
 
-建议先做三个接口：
+当前已经提供三个业务接口和一个健康检查接口：
 
 ```text
 POST /api/documents  上传文件，解析、切块并更新索引
@@ -322,13 +330,11 @@ POST /api/ask        接收问题，检索并返回答案和引用
 
 ```mermaid
 flowchart TD
-    A[当前：解析、切块、索引构建脚本] --> B[使用真实 Embedding API 生成 data/indexes]
-    B --> C[实现 query/search 入口]
-    C --> D[实现 chain/ 问答链]
-    D --> E[实现 api/ FastAPI]
-    E --> F[配置 frontend/ API 代理]
-    F --> G[实现上传、提问、引用展示]
-    G --> H[端到端测试]
+    A[当前：解析、切块、索引和基础问答链] --> B[用真实问题验证检索和回答]
+    B --> C[验证 api/ FastAPI]
+    C --> D[配置 frontend/ API 代理]
+    D --> E[实现上传、提问、引用展示]
+    E --> F[端到端测试]
 ```
 
-建议优先完成 `build_index.py` 和查询入口。它们可以先在命令行跑通，确认向量检索和引用位置正确后，再接 FastAPI 和 Vue，调试范围会更小。
+建议下一步先用真实问题运行 `ask.py` 和 FastAPI，确认聊天模型回答、上传追加索引和引用位置正确，再接 Vue 前端。

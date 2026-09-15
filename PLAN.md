@@ -17,9 +17,9 @@
 
 未完成：
 
-- 索引构建和查询命令行入口还没写，当前模块尚未通过真实 API 串成完整脚本
-- 问答链还没写，聊天模型尚未接入
-- FastAPI 还没写
+- 索引构建、查询和问答命令行入口已实现，真实中转站调用仍需按本机配置验证
+- 问答链基础实现已完成，真实端到端回答仍需验证
+- FastAPI 基础接口已实现，前端尚未对接
 - 前端还是 Vite 默认页；Element Plus 未注册，`/api` 代理未配
 
 ## 0. 先做：本机环境
@@ -99,15 +99,19 @@
 - `retriever.py` 和 `scripts/search_index.py` 提供问题向量化、Top-K 检索和引用结果输出。
 - 后续需要接入 API 上传流程，并增加真实中转站调用测试。
 
-## 5. 问答链（`backend/docucite/chain`）
+## 5. 问答链（`backend/docucite/chain`，基础实现已完成）
 
-- 问句 → 检索 Top-K → LangChain LCEL 作答
+- `client.py` 读取 `OPENAI_*` 配置并调用聊天模型。
+- `prompt.py` 将问题、检索结果和引用位置组织成上下文。
+- `qa.py` 实现检索、最低相似度判断、答案和 citations 输出。
+- `scripts/ask.py` 提供命令行入口。
+- 问句 → 检索 Top-K → 聊天模型作答
 - 答案必须能指回证据块（文件名 + 页码 + 原文片段）
 - 无命中或依据不足：明确说不知道
 
 可用脚本在命令行先问几句，确认引用对，再写 HTTP。
 
-## 6. FastAPI（`backend/docucite/api`）
+## 6. FastAPI（`backend/docucite/api`，基础接口已实现）
 
 给 Vue 的最小接口即可，例如：
 
@@ -115,7 +119,9 @@
 - `GET /api/documents`：已入索引的文件列表
 - `POST /api/ask`：问题 → `{ answer, citations: [{ filename, page, snippet }] }`
 
-启动（API 实现后可用；从仓库根目录执行，届时写入 README）：
+当前实现还包括 `GET /api/health`。上传文件会保存到 `data/uploads/`，解析后追加到 `data/indexes/` 的 FAISS 和 metadata；提问接口复用 `chain/`。
+
+启动（从 `backend/` 目录执行）：
 
 ```powershell
 conda activate docu-cite

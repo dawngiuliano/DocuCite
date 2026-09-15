@@ -41,6 +41,23 @@ class FaissStore:
         scores, indexes = self.index.search(query, min(top_k, self.index.ntotal))
         return [(self.chunks[i], float(score)) for i, score in zip(indexes[0], scores[0]) if i >= 0]
 
+    def add(self, chunks: list[Chunk], embed: Callable[[list[str]], list[list[float]]]) -> None:
+        """向已有索引追加切片，要求新向量与原索引维度一致。"""
+        import faiss
+
+        if not chunks:
+            raise ValueError("不能向索引追加空切片列表")
+        vectors = np.asarray(embed([chunk.text for chunk in chunks]), dtype="float32")
+        if vectors.ndim != 2 or len(vectors) != len(chunks):
+            raise ValueError("Embedding 返回的向量数量或维度不正确")
+        if vectors.shape[1] != self.index.d:
+            raise ValueError(
+                f"Embedding 维度不一致：已有索引为 {self.index.d}，新向量为 {vectors.shape[1]}"
+            )
+        faiss.normalize_L2(vectors)
+        self.index.add(vectors)
+        self.chunks.extend(chunks)
+
     def save(self, directory: str | Path) -> None:
         """保存 index.faiss 和 metadata.json。"""
         import faiss

@@ -54,7 +54,7 @@ pip install -r requirements.txt
 
 聊天模型使用 `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`；向量模型使用独立的 `EMBEDDING_API_KEY`、`EMBEDDING_BASE_URL`、`EMBEDDING_MODEL`，可连接不同的中转站。后续调用代码需分别读取并显式传入各自的 Key、URL 和模型名称。
 
-后端 FastAPI 还没写，conda 环境配好即可；API 启动命令等实现后再补。
+后端 FastAPI 基础接口已经实现，启动方式见下方“FastAPI 接口”部分。
 
 ## 前端
 
@@ -169,6 +169,31 @@ python scripts/search_index.py "考察和体检安排在什么时间？" --top-k
 ```
 
 脚本会显示相似度、文件名、位置、来源块和正文。它只负责检索，不会调用聊天模型生成答案。
+
+检索结果确认后，可以使用问答链生成答案和引用：
+
+```powershell
+python scripts/ask.py "教师岗位招聘人数是多少？"
+python scripts/ask.py "教师岗位招聘人数是多少？" --top-k 3 --min-score 0.25
+python scripts/ask.py "教师岗位招聘人数是多少？" --json
+```
+
+问答链同时使用两套配置：Embedding 使用 `EMBEDDING_*`，聊天模型使用 `OPENAI_*`。如果检索结果的最高相似度低于 `--min-score`，系统会拒绝编造答案。
+
+FastAPI 接口已经提供，可以在 `backend/` 目录启动：
+
+```powershell
+uvicorn docucite.api.app:app --reload --host 127.0.0.1 --port 8000
+```
+
+接口包括：
+
+```text
+GET  /api/health       健康检查
+POST /api/documents    上传并追加索引
+GET  /api/documents    查看索引中的文件
+POST /api/ask          检索并生成答案和引用
+```
 
 - **FAISS 本地即可**：适合个人项目；索引用 `faiss.write_index` 落盘，原文与 `doc_id / 文件名 / 页码` 另存 metadata。
 - **表格不跟正文混切**：一行（或一个逻辑单元）一块，并附带表头，否则检索和引用都会糊。
