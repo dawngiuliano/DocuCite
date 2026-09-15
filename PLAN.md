@@ -96,6 +96,7 @@
 - `embeddings.py` 调用 OpenAI 兼容接口生成向量。
 - `faiss_store.py` 提供创建、保存、加载和 Top-K 检索。
 - `metadata.py` 将 `Chunk` 保存为 `metadata.json`，与 FAISS 向量顺序对应。
+- `retriever.py` 和 `scripts/search_index.py` 提供问题向量化、Top-K 检索和引用结果输出。
 - 后续需要接入 API 上传流程，并增加真实中转站调用测试。
 
 ## 5. 问答链（`backend/docucite/chain`）

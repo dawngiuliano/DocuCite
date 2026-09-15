@@ -53,4 +53,11 @@ class FaissStore:
         """从磁盘加载索引和切片。"""
         import faiss
         target = Path(directory)
-        return cls(faiss.read_index(str(target / "index.faiss")), load_metadata(target / "metadata.json"))
+        index = faiss.read_index(str(target / "index.faiss"))
+        chunks = load_metadata(target / "metadata.json")
+        if index.ntotal != len(chunks):
+            raise ValueError(
+                "索引与 metadata 数量不一致："
+                f"FAISS 有 {index.ntotal} 个向量，metadata 有 {len(chunks)} 条记录"
+            )
+        return cls(index, chunks)

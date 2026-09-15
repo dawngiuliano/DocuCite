@@ -161,6 +161,15 @@ python scripts/build_index.py ../data/samples/markdown/公告.md
 python scripts/build_index.py ../data/samples --output ../data/indexes
 ```
 
+索引生成后，可以通过查询脚本检查检索结果：
+
+```powershell
+python scripts/search_index.py "教师岗位招聘人数是多少？"
+python scripts/search_index.py "考察和体检安排在什么时间？" --top-k 3
+```
+
+脚本会显示相似度、文件名、位置、来源块和正文。它只负责检索，不会调用聊天模型生成答案。
+
 - **FAISS 本地即可**：适合个人项目；索引用 `faiss.write_index` 落盘，原文与 `doc_id / 文件名 / 页码` 另存 metadata。
 - **表格不跟正文混切**：一行（或一个逻辑单元）一块，并附带表头，否则检索和引用都会糊。
 - **引用是功能，不是装饰**：回答必须能指回证据块；无命中则拒绝作答。

@@ -231,11 +231,11 @@ python tests/show_chunks.py ../data/samples/excel/招聘教师岗位汇总表.xl
 
 这些测试目前验证的是“内存中的结果”。执行 `python scripts/build_index.py` 后才会调用真实 Embedding API，并生成 `data/indexes/` 文件。
 
-## 六、尚未完成的部分
+## 六、后续待完成和刚实现的部分
 
-### 1. 查询服务
+### 1. 查询服务（已实现基础入口）
 
-索引构建脚本已经实现，入口是 `backend/scripts/build_index.py`。它把当前已有模块串起来：
+索引构建脚本已经实现，入口是 `backend/scripts/build_index.py`。查询入口是 `backend/scripts/search_index.py`，负责把问题转成向量并找回相关 `Chunk`。
 
 ```text
 选择文件或扫描 data/samples
@@ -253,9 +253,7 @@ cd backend
 python scripts/build_index.py
 ```
 
-下一步需要新增查询入口：
-
-需要新增查询入口：
+查询入口的内部流程是：
 
 ```text
 问题文本
@@ -265,7 +263,14 @@ python scripts/build_index.py
   -> 返回 Chunk、相似度和引用位置
 ```
 
-### 2. 问答链：`backend/docucite/chain/`
+查询命令：
+
+```powershell
+cd backend
+python scripts/search_index.py "教师岗位招聘人数是多少？" --top-k 5
+```
+
+### 2. 问答链：`backend/docucite/chain/`（待实现）
 
 需要使用聊天模型中转站配置：
 
